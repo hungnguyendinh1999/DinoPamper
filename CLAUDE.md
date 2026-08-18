@@ -25,3 +25,33 @@ This is a bare Expo (SDK 53) + React Native + TypeScript scaffold, not yet built
 - `tsconfig.json` extends `expo/tsconfig.base` with `strict: true`.
 
 Since the app has almost no code yet, prefer reading the actual files over relying on assumed structure, and check the versioned Expo docs (per AGENTS.md) before introducing new APIs.
+
+## Current Milestone (MVP)
+
+Building the core logging loop only. In scope:
+- Two screens: Timeline (chronological list of today's events) and QuickLog 
+  (three buttons: Feed, Sleep, Diaper — tap creates a timestamped entry, 
+  editable after creation)
+- Local persistence only (no backend, no sync)
+- Single user, no auth
+
+Explicitly OUT of scope until the MVP is working end-to-end:
+- Photo/video attachments — do not add camera or media-picker code yet, 
+  even if it seems like a natural fit. This is deferred on purpose until 
+  the timeline UI exists and we can see where it belongs.
+- Multi-day views, charts, push notifications, multi-caregiver sync
+- Milestone tracking, growth charts, export features
+
+## Data Layer
+
+Using SQLite via `expo-sqlite` for local persistence. Chosen over 
+AsyncStorage because the app needs date-range queries (today's events, 
+eventually multi-day views), and a relational schema now makes it 
+straightforward to swap in Postgres (e.g. Supabase) later if/when 
+multi-caregiver sync is added — same schema shape, different driver.
+
+## Navigation
+
+Using `@react-navigation/native` (stack or bottom-tab navigator — 
+Claude Code's choice, pick whichever fits two screens best) for 
+Timeline ↔ QuickLog navigation.

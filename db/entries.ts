@@ -18,6 +18,19 @@ export async function createEntry(db: SQLiteDatabase, type: EntryType): Promise<
   await db.runAsync('INSERT INTO entries (type, created_at) VALUES (?, ?)', type, Date.now());
 }
 
+export async function updateEntry(
+  db: SQLiteDatabase,
+  id: number,
+  changes: { type: EntryType; createdAt: number }
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE entries SET type = ?, created_at = ? WHERE id = ?',
+    changes.type,
+    changes.createdAt,
+    id
+  );
+}
+
 export async function getTodaysEntries(db: SQLiteDatabase): Promise<Entry[]> {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
