@@ -1,12 +1,14 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { Entry, EntryType, getTodaysEntries, updateEntry } from '../db/entries';
+import { Entry, EntryType, getLastEntryByType, getTodaysEntries, updateEntry } from '../db/entries';
+import { computeMilkExpiry, computeNextFeedTime } from '../lib/feedingEstimates';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { getNightWindow, NightWindow } from '../storage/nightWindow';
 
 const ENTRY_LABELS: Record<EntryType, string> = {
   feed: 'Feed',
@@ -33,25 +35,43 @@ export default function TimelineScreen() {
   const db = useSQLiteContext();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Timeline'>>();
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [lastFeedEntry, setLastFeedEntry] = useState<Entry | null>(null);
+  const [nightWindow, setNightWindowState] = useState<NightWindow | null>(null);
+  const [now, setNow] = useState(Date.now());
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [draftType, setDraftType] = useState<EntryType>('feed');
   const [draftCreatedAt, setDraftCreatedAt] = useState(Date.now());
 
-  const refresh = useCallback(() => {
-    getTodaysEntries(db).then(setEntries);
-  }, [db]);
+  const refresh = useCallback(
+    async (cancelledRef?: { current: boolean }) => {
+      const [todaysEntries, lastFeed, window] = await Promise.all([
+        getTodaysEntries(db),
+        getLastEntryByType(db, 'feed'),
+        getNightWindow(),
+      ]);
+      if (cancelledRef?.current) return;
+      setEntries(todaysEntries);
+      setLastFeedEntry(lastFeed);
+      setNightWindowState(window);
+      setNow(Date.now());
+    },
+    [db]
+  );
 
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-      getTodaysEntries(db).then((rows) => {
-        if (!cancelled) setEntries(rows);
-      });
+      const cancelledRef = { current: false };
+      refresh(cancelledRef);
       return () => {
-        cancelled = true;
+        cancelledRef.current = true;
       };
-    }, [db])
+    }, [refresh])
   );
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   function openEditor(entry: Entry) {
     setEditingEntry(entry);
@@ -70,8 +90,25 @@ export default function TimelineScreen() {
     refresh();
   }
 
+  const nextFeedAt =
+    lastFeedEntry && nightWindow ? computeNextFeedTime(lastFeedEntry.createdAt, nightWindow) : null;
+  const milkExpiryAt = lastFeedEntry ? computeMilkExpiry(lastFeedEntry.createdAt) : null;
+  const milkExpired = milkExpiryAt !== null && now >= milkExpiryAt;
+
   return (
     <View style={styles.container}>
+      {nextFeedAt !== null && (
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>Next feed estimated at {formatTime(nextFeedAt)}</Text>
+        </View>
+      )}
+      {milkExpiryAt !== null && (
+        <View style={[styles.banner, milkExpired && styles.bannerWarning]}>
+          <Text style={[styles.bannerText, milkExpired && styles.bannerWarningText]}>
+            Discard milk by {formatTime(milkExpiryAt)}
+          </Text>
+        </View>
+      )}
       <FlatList
         data={entries}
         keyExtractor={(item) => String(item.id)}
@@ -149,6 +186,26 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     color: '#888',
+  },
+  banner: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: '#eaf0fe',
+  },
+  bannerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2f6fed',
+    textAlign: 'center',
+  },
+  bannerWarning: {
+    backgroundColor: '#fdeceb',
+  },
+  bannerWarningText: {
+    color: '#d64545',
   },
   row: {
     flexDirection: 'row',

@@ -42,3 +42,12 @@ export async function getTodaysEntries(db: SQLiteDatabase): Promise<Entry[]> {
 
   return rows.map((row) => ({ id: row.id, type: row.type, createdAt: row.created_at }));
 }
+
+export async function getLastEntryByType(db: SQLiteDatabase, type: EntryType): Promise<Entry | null> {
+  const row = await db.getFirstAsync<EntryRow>(
+    'SELECT id, type, created_at FROM entries WHERE type = ? ORDER BY created_at DESC LIMIT 1',
+    type
+  );
+
+  return row ? { id: row.id, type: row.type, createdAt: row.created_at } : null;
+}
