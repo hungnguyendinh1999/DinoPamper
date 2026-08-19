@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
@@ -94,13 +95,17 @@ export default function TimelineScreen() {
     <View style={styles.container}>
       {nextFeedAt !== null && (
         <View style={styles.banner}>
-          <Text style={styles.bannerIcon}>⏰</Text>
+          <MaterialCommunityIcons name="clock-outline" size={20} color={colors.textPrimary} />
           <Text style={styles.bannerText}>Next feed estimated at {formatTime(nextFeedAt)}</Text>
         </View>
       )}
       {milkExpiryAt !== null && (
         <View style={[styles.banner, styles.milkBanner, milkExpired && styles.milkBannerExpired]}>
-          <Text style={styles.bannerIcon}>{milkExpired ? '⚠️' : '🥛'}</Text>
+          <MaterialCommunityIcons
+            name={milkExpired ? 'alert-circle-outline' : 'cup-outline'}
+            size={20}
+            color={milkExpired ? colors.warning : colors.primaryDark}
+          />
           <Text style={[styles.bannerText, milkExpired && styles.bannerTextExpired]}>
             Discard milk by {formatTime(milkExpiryAt)}
           </Text>
@@ -129,7 +134,7 @@ export default function TimelineScreen() {
               onPress={() => openEditor(item)}
             >
               <View style={[styles.rowIcon, { backgroundColor: type.soft }]}>
-                <Text style={styles.rowIconText}>{type.emoji}</Text>
+                <MaterialCommunityIcons name={type.icon} size={20} color={type.color} />
               </View>
               <Text style={styles.rowType}>{type.label}</Text>
               <Text style={styles.rowTime}>{formatTime(item.createdAt)}</Text>
@@ -145,13 +150,13 @@ export default function TimelineScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
-              {entryTypeStyles[draftType].emoji} Edit Entry
+              <MaterialCommunityIcons name={entryTypeStyles[draftType].icon} size={18} /> Edit Entry
             </Text>
 
             <Text style={styles.modalLabel}>Type</Text>
             <View style={styles.typeRow}>
               {ENTRY_TYPES.map((type) => {
-                const { emoji, label, color, soft } = entryTypeStyles[type];
+                const { icon, label, color, soft } = entryTypeStyles[type];
                 const selected = draftType === type;
                 return (
                   <Pressable
@@ -162,7 +167,7 @@ export default function TimelineScreen() {
                     ]}
                     onPress={() => setDraftType(type)}
                   >
-                    <Text style={styles.typeButtonEmoji}>{emoji}</Text>
+                    <MaterialCommunityIcons name={icon} size={16} color={selected ? '#fff' : color} />
                     <Text style={[styles.typeButtonText, { color: selected ? '#fff' : color }]}>{label}</Text>
                   </Pressable>
                 );
@@ -236,9 +241,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     ...cardShadow,
   },
-  bannerIcon: {
-    fontSize: 20,
-  },
   bannerText: {
     flex: 1,
     fontSize: 14,
@@ -292,9 +294,6 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  rowIconText: {
-    fontSize: 18,
   },
   rowType: {
     flex: 1,
@@ -361,9 +360,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     borderWidth: 2,
-  },
-  typeButtonEmoji: {
-    fontSize: 16,
   },
   typeButtonText: {
     fontSize: 14,

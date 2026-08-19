@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -57,7 +58,9 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>🌙 Night Window</Text>
+      <Text style={styles.sectionTitle}>
+        <MaterialCommunityIcons name="weather-night" size={18} color={colors.textPrimary} /> Night Window
+      </Text>
       <Text style={styles.sectionDescription}>
         Feeds logged during this window use the longer (night) interval for the next-feed estimate.
       </Text>
