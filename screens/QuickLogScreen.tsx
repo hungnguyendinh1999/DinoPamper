@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -22,7 +23,7 @@ export default function QuickLogScreen() {
     <View style={styles.container}>
       <Text style={styles.prompt}>What just happened?</Text>
       {ENTRY_TYPES.map((type) => {
-        const { emoji, label, color, soft } = entryTypeStyles[type];
+        const { icon, label, color, soft } = entryTypeStyles[type];
         return (
           <Pressable
             key={type}
@@ -33,7 +34,7 @@ export default function QuickLogScreen() {
             ]}
             onPress={() => handleLog(type)}
           >
-            <Text style={styles.buttonEmoji}>{emoji}</Text>
+            <MaterialCommunityIcons name={icon} size={26} color={color} />
             <Text style={[styles.buttonText, { color }]}>{label}</Text>
           </Pressable>
         );
@@ -69,9 +70,6 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.7,
-  },
-  buttonEmoji: {
-    fontSize: 26,
   },
   buttonText: {
     fontSize: 18,

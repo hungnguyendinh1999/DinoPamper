@@ -1,4 +1,8 @@
+import type { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import type { EntryType } from '../db/entries';
+
+type MCIName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 export const colors = {
   background: '#FAF6EC',
@@ -39,8 +43,8 @@ export const cardShadow = {
   elevation: 2,
 };
 
-export const entryTypeStyles: Record<EntryType, { emoji: string; label: string; color: string; soft: string }> = {
-  feed: { emoji: '🍼', label: 'Feed', color: '#C97A3D', soft: '#FBEAD8' },
-  sleep: { emoji: '🌙', label: 'Sleep', color: '#6C7BAE', soft: '#E7E9F6' },
-  diaper: { emoji: '💩', label: 'Diaper', color: '#9A7C53', soft: '#F1E8D9' },
+export const entryTypeStyles: Record<EntryType, { icon: MCIName; label: string; color: string; soft: string }> = {
+  feed: { icon: 'baby-bottle-outline', label: 'Feed', color: '#C97A3D', soft: '#FBEAD8' },
+  sleep: { icon: 'weather-night', label: 'Sleep', color: '#6C7BAE', soft: '#E7E9F6' },
+  diaper: { icon: 'human-baby-changing-table', label: 'Diaper', color: '#9A7C53', soft: '#F1E8D9' },
 };
