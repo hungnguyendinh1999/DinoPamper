@@ -5,12 +5,9 @@ import { useSQLiteContext } from 'expo-sqlite';
 
 import { createEntry, EntryType } from '../db/entries';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { cardShadow, colors, entryTypeStyles, radius, spacing } from '../theme/theme';
 
-const BUTTONS: { type: EntryType; label: string }[] = [
-  { type: 'feed', label: 'Feed' },
-  { type: 'sleep', label: 'Sleep' },
-  { type: 'diaper', label: 'Diaper' },
-];
+const ENTRY_TYPES: EntryType[] = ['feed', 'sleep', 'diaper'];
 
 export default function QuickLogScreen() {
   const db = useSQLiteContext();
@@ -23,11 +20,24 @@ export default function QuickLogScreen() {
 
   return (
     <View style={styles.container}>
-      {BUTTONS.map(({ type, label }) => (
-        <Pressable key={type} style={styles.button} onPress={() => handleLog(type)}>
-          <Text style={styles.buttonText}>{label}</Text>
-        </Pressable>
-      ))}
+      <Text style={styles.prompt}>What just happened?</Text>
+      {ENTRY_TYPES.map((type) => {
+        const { emoji, label, color, soft } = entryTypeStyles[type];
+        return (
+          <Pressable
+            key={type}
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: soft, borderColor: color },
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={() => handleLog(type)}
+          >
+            <Text style={styles.buttonEmoji}>{emoji}</Text>
+            <Text style={[styles.buttonText, { color }]}>{label}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -35,20 +45,36 @@ export default function QuickLogScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     justifyContent: 'center',
-    padding: 20,
-    gap: 16,
+    padding: spacing.xxl,
+    gap: spacing.lg,
+  },
+  prompt: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
   button: {
-    paddingVertical: 20,
-    borderRadius: 12,
-    backgroundColor: '#2f6fed',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.xl,
+    borderRadius: radius.xl,
+    borderWidth: 2,
+    ...cardShadow,
+  },
+  buttonPressed: {
+    opacity: 0.7,
+  },
+  buttonEmoji: {
+    fontSize: 26,
   },
   buttonText: {
-    color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

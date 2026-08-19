@@ -1,10 +1,11 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Pressable, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import QuickLogScreen from '../screens/QuickLogScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TimelineScreen from '../screens/TimelineScreen';
+import { colors } from '../theme/theme';
 
 export type RootStackParamList = {
   Timeline: undefined;
@@ -17,15 +18,29 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function RootNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Timeline">
+      <Stack.Navigator
+        initialRouteName="Timeline"
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.surface },
+          headerTintColor: colors.textPrimary,
+          headerTitleStyle: { fontWeight: '700' },
+          headerShadowVisible: false,
+        }}
+      >
         <Stack.Screen
           name="Timeline"
           component={TimelineScreen}
           options={({ navigation }) => ({
             title: 'Timeline',
             headerRight: () => (
-              <Pressable onPress={() => navigation.navigate('Settings')} hitSlop={8}>
-                <Text style={{ fontSize: 20 }}>⚙️</Text>
+              <Pressable
+                onPress={() => navigation.navigate('Settings')}
+                hitSlop={10}
+                style={styles.gearButton}
+              >
+                {/* Plain (non-emoji-presentation) gear glyph — the emoji variant renders
+                    incorrectly as a native-stack headerRight view on iOS. */}
+                <Text style={styles.gearGlyph}>⚙</Text>
               </Pressable>
             ),
           })}
@@ -36,3 +51,15 @@ export default function RootNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  gearButton: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  gearGlyph: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+});

@@ -9,12 +9,7 @@ import { Entry, EntryType, getLastEntryByType, getTodaysEntries, updateEntry } f
 import { computeMilkExpiry, computeNextFeedTime } from '../lib/feedingEstimates';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { getNightWindow, NightWindow } from '../storage/nightWindow';
-
-const ENTRY_LABELS: Record<EntryType, string> = {
-  feed: 'Feed',
-  sleep: 'Sleep',
-  diaper: 'Diaper',
-};
+import { cardShadow, colors, entryTypeStyles, radius, spacing } from '../theme/theme';
 
 const ENTRY_TYPES: EntryType[] = ['feed', 'sleep', 'diaper'];
 
@@ -99,50 +94,79 @@ export default function TimelineScreen() {
     <View style={styles.container}>
       {nextFeedAt !== null && (
         <View style={styles.banner}>
+          <Text style={styles.bannerIcon}>⏰</Text>
           <Text style={styles.bannerText}>Next feed estimated at {formatTime(nextFeedAt)}</Text>
         </View>
       )}
       {milkExpiryAt !== null && (
-        <View style={[styles.banner, milkExpired && styles.bannerWarning]}>
-          <Text style={[styles.bannerText, milkExpired && styles.bannerWarningText]}>
+        <View style={[styles.banner, styles.milkBanner, milkExpired && styles.milkBannerExpired]}>
+          <Text style={styles.bannerIcon}>{milkExpired ? '⚠️' : '🥛'}</Text>
+          <Text style={[styles.bannerText, milkExpired && styles.bannerTextExpired]}>
             Discard milk by {formatTime(milkExpiryAt)}
           </Text>
+          {milkExpired && (
+            <View style={styles.overdueBadge}>
+              <Text style={styles.overdueBadgeText}>OVERDUE</Text>
+            </View>
+          )}
         </View>
       )}
       <FlatList
         data={entries}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={entries.length === 0 && styles.emptyList}
-        ListEmptyComponent={<Text style={styles.emptyText}>No events logged today.</Text>}
-        renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => openEditor(item)}>
-            <Text style={styles.rowType}>{ENTRY_LABELS[item.type]}</Text>
-            <Text style={styles.rowTime}>{formatTime(item.createdAt)}</Text>
-          </Pressable>
-        )}
+        contentContainerStyle={[styles.listContent, entries.length === 0 && styles.emptyList]}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>🦕</Text>
+            <Text style={styles.emptyText}>No events logged today.</Text>
+          </View>
+        }
+        renderItem={({ item }) => {
+          const type = entryTypeStyles[item.type];
+          return (
+            <Pressable
+              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+              onPress={() => openEditor(item)}
+            >
+              <View style={[styles.rowIcon, { backgroundColor: type.soft }]}>
+                <Text style={styles.rowIconText}>{type.emoji}</Text>
+              </View>
+              <Text style={styles.rowType}>{type.label}</Text>
+              <Text style={styles.rowTime}>{formatTime(item.createdAt)}</Text>
+            </Pressable>
+          );
+        }}
       />
-      <Pressable style={styles.logButton} onPress={() => navigation.navigate('QuickLog')}>
-        <Text style={styles.logButtonText}>Log Event</Text>
+      <Pressable style={({ pressed }) => [styles.logButton, pressed && styles.logButtonPressed]} onPress={() => navigation.navigate('QuickLog')}>
+        <Text style={styles.logButtonText}>+ Log Event</Text>
       </Pressable>
 
       <Modal visible={editingEntry !== null} animationType="slide" transparent onRequestClose={closeEditor}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Edit Entry</Text>
+            <Text style={styles.modalTitle}>
+              {entryTypeStyles[draftType].emoji} Edit Entry
+            </Text>
 
             <Text style={styles.modalLabel}>Type</Text>
             <View style={styles.typeRow}>
-              {ENTRY_TYPES.map((type) => (
-                <Pressable
-                  key={type}
-                  style={[styles.typeButton, draftType === type && styles.typeButtonSelected]}
-                  onPress={() => setDraftType(type)}
-                >
-                  <Text style={[styles.typeButtonText, draftType === type && styles.typeButtonTextSelected]}>
-                    {ENTRY_LABELS[type]}
-                  </Text>
-                </Pressable>
-              ))}
+              {ENTRY_TYPES.map((type) => {
+                const { emoji, label, color, soft } = entryTypeStyles[type];
+                const selected = draftType === type;
+                return (
+                  <Pressable
+                    key={type}
+                    style={[
+                      styles.typeButton,
+                      { backgroundColor: selected ? color : soft, borderColor: color },
+                    ]}
+                    onPress={() => setDraftType(type)}
+                  >
+                    <Text style={styles.typeButtonEmoji}>{emoji}</Text>
+                    <Text style={[styles.typeButtonText, { color: selected ? '#fff' : color }]}>{label}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
 
             <Text style={styles.modalLabel}>Time</Text>
@@ -177,63 +201,126 @@ export default function TimelineScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
+  },
+  listContent: {
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
   emptyList: {
     flexGrow: 1,
     justifyContent: 'center',
   },
+  emptyState: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyEmoji: {
+    fontSize: 40,
+  },
   emptyText: {
-    textAlign: 'center',
-    color: '#888',
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   banner: {
-    marginHorizontal: 20,
-    marginTop: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: '#eaf0fe',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...cardShadow,
+  },
+  bannerIcon: {
+    fontSize: 20,
   },
   bannerText: {
+    flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#2f6fed',
-    textAlign: 'center',
+    color: colors.textPrimary,
   },
-  bannerWarning: {
-    backgroundColor: '#fdeceb',
+  milkBanner: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primarySoft,
   },
-  bannerWarningText: {
-    color: '#d64545',
+  milkBannerExpired: {
+    backgroundColor: colors.warningSoft,
+    borderWidth: 2,
+    borderColor: colors.warning,
+  },
+  bannerTextExpired: {
+    color: colors.warning,
+    fontWeight: '700',
+  },
+  overdueBadge: {
+    backgroundColor: colors.warning,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  overdueBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ddd',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  rowPressed: {
+    opacity: 0.7,
+  },
+  rowIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowIconText: {
+    fontSize: 18,
   },
   rowType: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '600',
+    color: colors.textPrimary,
   },
   rowTime: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 15,
+    color: colors.textSecondary,
   },
   logButton: {
-    margin: 20,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#2f6fed',
+    margin: spacing.xl,
+    paddingVertical: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary,
     alignItems: 'center',
+    ...cardShadow,
+  },
+  logButtonPressed: {
+    opacity: 0.85,
   },
   logButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   modalBackdrop: {
     flex: 1,
@@ -241,87 +328,90 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   modalCard: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 20,
-    gap: 8,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing.xxl,
+    gap: spacing.sm,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
-    marginBottom: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
   modalLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
-    marginTop: 8,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginTop: spacing.sm,
   },
   typeRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
   },
   typeButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#f0f0f0',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 2,
   },
-  typeButtonSelected: {
-    backgroundColor: '#2f6fed',
+  typeButtonEmoji: {
+    fontSize: 16,
   },
   typeButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-  },
-  typeButtonTextSelected: {
-    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   timeValue: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    marginBottom: 4,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
   shiftButton: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#f0f0f0',
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
   },
   shiftButtonText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '700',
+    color: colors.primaryDark,
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 16,
+    gap: spacing.sm,
+    marginTop: spacing.lg,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: spacing.md + 2,
+    borderRadius: radius.md,
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.surfaceAlt,
   },
   cancelButtonText: {
-    color: '#333',
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: '#2f6fed',
+    backgroundColor: colors.primary,
   },
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
