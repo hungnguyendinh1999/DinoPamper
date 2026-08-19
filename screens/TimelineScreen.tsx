@@ -95,13 +95,17 @@ export default function TimelineScreen() {
     <View style={styles.container}>
       {nextFeedAt !== null && (
         <View style={styles.banner}>
-          <Text style={styles.bannerIcon}>⏰</Text>
+          <MaterialCommunityIcons name="clock-outline" size={20} color={colors.textPrimary} />
           <Text style={styles.bannerText}>Next feed estimated at {formatTime(nextFeedAt)}</Text>
         </View>
       )}
       {milkExpiryAt !== null && (
         <View style={[styles.banner, styles.milkBanner, milkExpired && styles.milkBannerExpired]}>
-          <Text style={styles.bannerIcon}>{milkExpired ? '⚠️' : '🥛'}</Text>
+          <MaterialCommunityIcons
+            name={milkExpired ? 'alert-circle-outline' : 'cup-outline'}
+            size={20}
+            color={milkExpired ? colors.warning : colors.primaryDark}
+          />
           <Text style={[styles.bannerText, milkExpired && styles.bannerTextExpired]}>
             Discard milk by {formatTime(milkExpiryAt)}
           </Text>
@@ -236,9 +240,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     ...cardShadow,
-  },
-  bannerIcon: {
-    fontSize: 20,
   },
   bannerText: {
     flex: 1,
